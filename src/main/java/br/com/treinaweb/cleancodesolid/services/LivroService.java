@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import br.com.treinaweb.cleancodesolid.dtos.inputs.LivroRequest;
 import br.com.treinaweb.cleancodesolid.dtos.outputs.LivroResponse;
 import br.com.treinaweb.cleancodesolid.exceptions.ValidacaoException;
+import br.com.treinaweb.cleancodesolid.mappers.RequestMapper;
+import br.com.treinaweb.cleancodesolid.mappers.ResponseMapper;
 import br.com.treinaweb.cleancodesolid.models.Livro;
 import br.com.treinaweb.cleancodesolid.repositories.LivroRepository;
 
@@ -16,35 +18,34 @@ public class LivroService {
 
     private LivroRepository livroRepository;
 
-    public LivroService(LivroRepository livroRepository) {
+    private ResponseMapper<LivroResponse, Livro> responseMapper;
+
+    private RequestMapper<LivroRequest, Livro> requestMapper;
+
+    public LivroService(
+        LivroRepository livroRepository,
+        ResponseMapper<LivroResponse, Livro> responseMapper,
+        RequestMapper<LivroRequest, Livro> requestMapper
+    ) {
         this.livroRepository = livroRepository;
+        this.responseMapper = responseMapper;
+        this.requestMapper = requestMapper;
     }
 
     public LivroResponse cadastrar(LivroRequest livroRequest) {
-        Livro livro = livroRequestToLivro(livroRequest);
+        Livro livro = requestMapper.toModel(livroRequest);
 
         validarLivro(livro);
 
         livroRepository.save(livro);
 
-        return livroToLivroResponse(livro);
+        return responseMapper.toResponse(livro);
     }
 
     public List<LivroResponse> listar() {
         List<Livro> livros = livroRepository.findAll();
 
         return livroListToLivroResponseList(livros);
-    }
-
-    private Livro livroRequestToLivro(LivroRequest livroRequest) {
-        Livro livro = new Livro();
-        livro.setTitulo(livroRequest.getTitulo());
-        livro.setAutor(livroRequest.getAutor());
-        livro.setPaginas(livroRequest.getPaginas());
-        livro.setIsbn(livroRequest.getIsbn());
-        livro.setDescricao(livroRequest.getDescricao());
-
-        return livro;
     }
 
     private void validarLivro(Livro livro) {
@@ -73,19 +74,10 @@ public class LivroService {
         }
     }
 
-    private LivroResponse livroToLivroResponse(Livro livro) {
-        LivroResponse livroResponse = new LivroResponse();
-        livroResponse.setId(livro.getId());
-        livroResponse.setTitulo(livro.getTitulo());
-        livroResponse.setAutor(livro.getAutor());
-
-        return livroResponse;
-    }
-
     private List<LivroResponse> livroListToLivroResponseList(List<Livro> livros) {
         List<LivroResponse> livroResponseList = new ArrayList<>();
         for (Livro livro : livros) {
-            livroResponseList.add(livroToLivroResponse(livro));
+            livroResponseList.add(responseMapper.toResponse(livro));
         }
 
         return livroResponseList;
